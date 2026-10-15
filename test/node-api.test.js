@@ -29,3 +29,27 @@ test("chain endpoint returns a chain beginning at genesis", async () => {
   assert.equal(chain[0].index, 0);
   assert.equal(chain[0].previousHash, "0".repeat(64));
 });
+
+test("node rejects a malformed transaction without changing chain height", async () => {
+  const beforeResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(beforeResponse.status, 200);
+  const before = await beforeResponse.json();
+
+  const response = await fetch(`${BASE_URL}/transactions/receive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tx: { type: "transfer" } }),
+  });
+
+  assert.equal(response.status, 400);
+
+  const result = await response.json();
+  assert.equal(typeof result.error, "string");
+
+  const afterResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(afterResponse.status, 200);
+  const after = await afterResponse.json();
+
+  assert.equal(after.height, before.height);
+  assert.equal(after.latestHash, before.latestHash);
+});
