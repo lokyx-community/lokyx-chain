@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 
 const BASE_URL = "http://localhost:7070";
@@ -89,3 +89,37 @@ test("node rejects a transaction with an invalid signature without changing pend
   assert.equal(after.latestHash, before.latestHash);
 });
 
+
+test("node rejects an invalid block without changing the chain", async () => {
+  const beforeResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(beforeResponse.status, 200);
+  const before = await beforeResponse.json();
+
+  const response = await fetch(`${BASE_URL}/receive-block`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      block: {
+        index: before.height + 1,
+        timestamp: Date.now(),
+        transactions: [],
+        previousHash: before.latestHash,
+        nonce: 0,
+        hash: "invalid-hash",
+      },
+    }),
+  });
+
+  assert.equal(response.status, 409);
+
+  const result = await response.json();
+  assert.equal(result.accepted, false);
+  assert.equal(typeof result.message, "string");
+
+  const afterResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(afterResponse.status, 200);
+  const after = await afterResponse.json();
+
+  assert.equal(after.height, before.height);
+  assert.equal(after.latestHash, before.latestHash);
+});
