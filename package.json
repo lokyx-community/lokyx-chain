@@ -1,8 +1,13 @@
-{
-  "name": "lokyx-chain",
-  "version": "0.1.0",
-  "description": "LOKYX serverless-first blockchain prototype",
-  "type": "module",
-  "scripts": { "start": "node lokyx.js" },
-  "engines": { "node": ">=20" }
+﻿{
+    "name":  "lokyx-chain",
+    "version":  "0.1.0",
+    "description":  "LOKYX serverless-first blockchain prototype",
+    "type":  "module",
+    "scripts":  {
+                    "start":  "node lokyx.js",
+                    "test":  "node --test"
+                },
+    "engines":  {
+                    "node":  "\u003e=20"
+                }
 }
