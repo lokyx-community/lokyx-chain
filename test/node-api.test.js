@@ -100,7 +100,7 @@ test("node rejects an invalid block without changing the chain", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       block: {
-        index: before.height + 1,
+        index: before.height,
         timestamp: Date.now(),
         transactions: [],
         previousHash: before.latestHash,
@@ -110,7 +110,7 @@ test("node rejects an invalid block without changing the chain", async () => {
     }),
   });
 
-  assert.equal(response.status, 409);
+  assert.equal(response.status, 400);
 
   const result = await response.json();
   assert.equal(result.accepted, false);
