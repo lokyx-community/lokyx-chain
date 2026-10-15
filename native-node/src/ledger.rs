@@ -1,4 +1,3 @@
-
 use crate::transaction::Transaction;
 use std::collections::BTreeMap;
 
@@ -11,10 +10,7 @@ pub struct AccountState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LedgerError {
     InvalidTransaction,
-    IncorrectNonce {
-        expected: u64,
-        received: u64,
-    },
+    IncorrectNonce { expected: u64, received: u64 },
     InsufficientFunds,
     BalanceOverflow,
     NonceOverflow,
@@ -32,19 +28,13 @@ impl Ledger {
 
     /// Creates ledger state from explicit genesis allocations.
     /// This is a local initialization function, not a public mint endpoint.
-    pub fn from_genesis_allocations(
-        allocations: impl IntoIterator<Item = (String, u64)>,
-    ) -> Self {
+    pub fn from_genesis_allocations(allocations: impl IntoIterator<Item = (String, u64)>) -> Self {
         let mut ledger = Self::new();
 
         for (address, balance) in allocations {
-            ledger.accounts.insert(
-                address,
-                AccountState {
-                    balance,
-                    nonce: 0,
-                },
-            );
+            ledger
+                .accounts
+                .insert(address, AccountState { balance, nonce: 0 });
         }
 
         ledger
@@ -56,10 +46,7 @@ impl Ledger {
 
     /// Validates and executes a transfer atomically.
     /// Failed transactions leave the ledger unchanged.
-    pub fn apply_transaction(
-        &mut self,
-        transaction: &Transaction,
-    ) -> Result<(), LedgerError> {
+    pub fn apply_transaction(&mut self, transaction: &Transaction) -> Result<(), LedgerError> {
         if !transaction.is_valid() {
             return Err(LedgerError::InvalidTransaction);
         }
@@ -123,12 +110,8 @@ mod tests {
         let sender_address = sender.address();
         let recipient_address = recipient.address();
 
-        let message = Transaction::signing_message(
-            &sender_address,
-            &recipient_address,
-            amount,
-            nonce,
-        );
+        let message =
+            Transaction::signing_message(&sender_address, &recipient_address, amount, nonce);
 
         Transaction {
             sender: sender_address,
@@ -141,10 +124,7 @@ mod tests {
     }
 
     fn funded_ledger(sender: &Wallet, balance: u64) -> Ledger {
-        Ledger::from_genesis_allocations([(
-            sender.address(),
-            balance,
-        )])
+        Ledger::from_genesis_allocations([(sender.address(), balance)])
     }
 
     #[test]
