@@ -11,3 +11,5 @@ data-7071/
 coverage/
 native-node/target/
 native-node/chain.json
+
+backup-before-testnet/
