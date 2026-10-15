@@ -1,0 +1,9 @@
+# Local development backups
+chain.before-ledger.json
+src/main.rs.before-ledger
+
+# Local blockchain state
+chain.json
+
+# Rust build artifacts
+target/
