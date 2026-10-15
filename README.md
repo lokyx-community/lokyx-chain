@@ -64,8 +64,36 @@ That confirms the basic block-propagation path works in this test. It doesn't me
 - Make wallet key handling safer.
 - Expand the explorer and document the protocol.
 
-## Important
+## Development Approach & Roadmap
 
-LOKYX is experimental software. Don't expose these nodes to the public internet, store valuable keys in them, or use them to handle real funds. The current wallet and API design need further security work before public deployment.
+LOKYX is being developed as an independent Layer 1 blockchain, with its own native asset, node software, peer-to-peer networking, and protocol rules.
 
-Contributions, issues, and technical feedback are welcome.
+### Protocol Prototyping and Validation
+
+The initial protocol prototype was implemented in JavaScript to validate core blockchain behavior and establish a testable foundation before proceeding with the native node implementation.
+
+The prototype currently covers:
+
+- Block creation, hash linkage, and proof-of-work validation.
+- Transaction signature verification and nonce validation.
+- Chain integrity and transaction-state validation.
+- HTTP-based node APIs and peer synchronization.
+- Rejection of malformed transactions and invalid blocks.
+
+The current automated test suite includes **7 passing tests** covering core API behavior and invalid transaction and block rejection.
+
+### Native Node Development
+
+The next development phase is focused on implementing the LOKYX native node in Rust. The JavaScript prototype will serve as a reference implementation while protocol rules are formalized and tested.
+
+The goal is to ensure deterministic block validation, consistent transaction processing, and reliable synchronization across independently running nodes.
+
+### Roadmap
+
+1. **Protocol specification** — Define genesis parameters, transaction encoding, block structure, and validation rules.
+2. **Native node implementation** — Develop the Rust node and core protocol components.
+3. **Consensus and networking** — Formalize the consensus mechanism and harden peer-to-peer communication.
+4. **Multi-node testing** — Verify that independent nodes agree on valid chain state and reject invalid data.
+5. **Testnet preparation** — Establish network configuration, persistent storage safeguards, operational monitoring, and reproducible deployment procedures.
+
+LOKYX is under active development. The current implementation is experimental, and the public testnet and production security model are not yet complete.
