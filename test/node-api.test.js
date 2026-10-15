@@ -1,4 +1,4 @@
-import test from "node:test";
+﻿import test from "node:test";
 import assert from "node:assert/strict";
 
 const BASE_URL = "http://localhost:7070";
@@ -100,7 +100,7 @@ test("node rejects an invalid block without changing the chain", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       block: {
-        index: before.height,
+        index: before.height + 1,
         timestamp: Date.now(),
         transactions: [],
         previousHash: before.latestHash,
@@ -120,6 +120,135 @@ test("node rejects an invalid block without changing the chain", async () => {
   assert.equal(afterResponse.status, 200);
   const after = await afterResponse.json();
 
+  assert.equal(after.height, before.height);
+  assert.equal(after.latestHash, before.latestHash);
+});
+
+
+test("node rejects a correctly signed transaction with a negative nonce", async () => {
+  const { publicKey, privateKey } = await import("node:crypto").then(({ generateKeyPairSync }) =>
+    generateKeyPairSync("ed25519")
+  );
+
+  const crypto = await import("node:crypto");
+  const publicPem = publicKey.export({ type: "spki", format: "pem" }).toString();
+  const privatePem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+  const { createHash, sign } = crypto;
+
+  const sender = "LKX" + createHash("sha256").update(publicPem).digest("hex").slice(0, 40);
+  const txBody = {
+    sender,
+    recipient: "LKX1111111111111111111111111111111111111111",
+    amount: 1,
+    nonce: -1,
+  };
+
+  const signature = sign(
+    null,
+    Buffer.from(JSON.stringify(txBody)),
+    privatePem
+  ).toString("base64");
+
+  const before = await (await fetch(`${BASE_URL}/status`)).json();
+
+  const response = await fetch(`${BASE_URL}/transactions/receive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tx: { type: "transfer", ...txBody, publicKey: publicPem, signature },
+    }),
+  });
+
+  assert.equal(response.status, 400);
+
+  const after = await (await fetch(`${BASE_URL}/status`)).json();
+  assert.equal(after.pendingTransactions, before.pendingTransactions);
+  assert.equal(after.height, before.height);
+  assert.equal(after.latestHash, before.latestHash);
+});
+
+
+test("node rejects a block with the reward transaction out of position", async () => {
+  const crypto = await import("node:crypto");
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
+
+  const publicPem = publicKey.export({
+    type: "spki",
+    format: "pem"
+  }).toString();
+
+  const privatePem = privateKey.export({
+    type: "pkcs8",
+    format: "pem"
+  }).toString();
+
+  const sender = "LKX" + crypto.createHash("sha256")
+    .update(publicPem)
+    .digest("hex")
+    .slice(0, 40);
+
+  const txBody = {
+    sender,
+    recipient: "LKX1111111111111111111111111111111111111111",
+    amount: 1,
+    nonce: 1
+  };
+
+  const tx = {
+    type: "transfer",
+    ...txBody,
+    publicKey: publicPem,
+    signature: crypto.sign(
+      null,
+      Buffer.from(JSON.stringify(txBody)),
+      privatePem
+    ).toString("base64")
+  };
+
+  const before = await (await fetch(`${BASE_URL}/status`)).json();
+  const chain = await (await fetch(`${BASE_URL}/chain`)).json();
+  const previous = chain.at(-1);
+
+  const block = {
+    index: previous.index + 1,
+    timestamp: Date.now(),
+    transactions: [
+      tx,
+      {
+        type: "reward",
+        recipient: "LKXTEST000000000000000000000000000000000001",
+        amount: 50
+      }
+    ],
+    previousHash: previous.hash,
+    nonce: 0
+  };
+
+  const hashBlock = value => crypto.createHash("sha256")
+    .update(JSON.stringify({
+      index: value.index,
+      timestamp: value.timestamp,
+      transactions: value.transactions,
+      previousHash: value.previousHash,
+      nonce: value.nonce
+    }))
+    .digest("hex");
+
+  do {
+    block.hash = hashBlock(block);
+    if (block.hash.startsWith("000")) break;
+    block.nonce++;
+  } while (true);
+
+  const response = await fetch(`${BASE_URL}/receive-block`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ block })
+  });
+
+  assert.equal(response.status, 400);
+
+  const after = await (await fetch(`${BASE_URL}/status`)).json();
   assert.equal(after.height, before.height);
   assert.equal(after.latestHash, before.latestHash);
 });

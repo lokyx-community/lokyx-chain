@@ -9,3 +9,5 @@ wallets/
 data-7070/
 data-7071/
 coverage/
+native-node/target/
+native-node/chain.json
