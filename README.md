@@ -1,83 +1,71 @@
-# LOKYX — one-hour blockchain prototype
+# LOKYX
 
-A runnable Node.js prototype demonstrating:
-- SHA-256 proof-of-work blocks
-- Native demo-unit rewards (`LOKYX`)
-- Ed25519-signed transfer transactions
-- Balance checks and sequential nonces
-- Multiple local nodes that exchange transactions and blocks
-- Longer-valid-chain synchronization
+LOKYX is an experimental blockchain I'm building with Node.js. The idea is to develop a native chain and understand the parts that make it work, starting with block creation, transaction validation, and communication between nodes.
 
-## Requirements
-- Node.js 20+
-- No npm dependencies
+Right now, the project runs locally and supports proof-of-work mining, signed transfers, and basic synchronization between nodes. It is still under development.
 
-## Run two nodes (Windows PowerShell)
+## Current implementation
 
-Open two terminal windows in this folder.
+- Blocks are hashed using SHA-256.
+- Mining uses a proof-of-work check with a configurable difficulty.
+- Transactions use Ed25519 signatures.
+- Transfers include balance checks and sequential nonces.
+- Nodes can connect to peers and exchange blocks.
+- The chain is saved locally so the node can load its state after restarting.
+- A basic HTML block explorer is included.
 
-Terminal 1:
-```powershell
-$env:PORT=7070
-node lokyx.js
+## Running locally
+
+You'll need Node.js 20 or newer.
+
+Clone the repository, open its directory, and run:
+
+```bash
+npm start
 ```
 
-Terminal 2:
+By default, the node listens on port `7070`.
+
+To start a second local node in PowerShell, open another terminal and run:
+
 ```powershell
-$env:PORT=7071
-node lokyx.js
+$env:PORT = "7071"
+npm start
 ```
 
-In a third PowerShell window, connect the nodes:
-```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:7070/peers -ContentType 'application/json' -Body '{"peer":"http://localhost:7071"}'
-Invoke-RestMethod -Method Post -Uri http://localhost:7071/peers -ContentType 'application/json' -Body '{"peer":"http://localhost:7070"}'
-```
+The nodes use separate local data directories. Keep both terminals open while testing.
 
-## Create a demo wallet
+## Useful endpoints
 
-Open:
-`http://localhost:7070/wallet/new`
+| Endpoint | Purpose |
+|---|---|
+| `/status` | View the node's current status |
+| `/chain` | Inspect the local blockchain |
+| `/balance?address=LKX...` | Check an address balance |
+| `/wallet/new` | Generate a test key pair |
+| `/mine?address=LKX...` | Mine a block |
+| `/peers` | View configured peers |
+| `/sync` | Try to synchronize with a peer |
 
-Save the returned `address` and `privateKey` somewhere safe for this local demo. This endpoint is intentionally simple and is NOT safe to expose publicly. Do not reuse any real wallet key.
+Some endpoints change the node's state. Use this API only in a local test environment.
 
-## Mine
+## Current status
 
-Replace `YOUR_ADDRESS` with the address returned above:
-`http://localhost:7070/mine?address=YOUR_ADDRESS`
+I've tested the basic two-node setup locally. Both nodes reported the same chain height and block hash after a block was mined on one node and received by the other.
 
-Check balance:
-`http://localhost:7070/balance?address=YOUR_ADDRESS`
+That confirms the basic block-propagation path works in this test. It doesn't mean the consensus mechanism or validation rules are ready for production.
 
-Mine on either node. If the nodes don't immediately agree, visit:
-`http://localhost:7071/sync`
+## What's left to do
 
-## Send a transaction
+- Add automated tests for valid and invalid transactions.
+- Test malformed blocks and incorrect mining rewards.
+- Improve fork handling and chain synchronization.
+- Review peer communication and API security.
+- Make wallet key handling safer.
+- Expand the explorer and document the protocol.
 
-Use a local API client such as curl. Substitute the actual private key, recipient address, and amount. Keep the private key in your local terminal; do not paste it into a public service.
+## Important
 
-Example PowerShell (replace placeholders):
-```powershell
-$body = @{
-  privateKey = @'
------BEGIN PRIVATE KEY-----
-PASTE_LOCAL_DEMO_PRIVATE_KEY_HERE
------END PRIVATE KEY-----
-'@
-  recipient = 'LKX_RECIPIENT_ADDRESS'
-  amount = 5
-} | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri http://localhost:7070/transactions -ContentType 'application/json' -Body $body
-```
+LOKYX is experimental software. Don't expose these nodes to the public internet, store valuable keys in them, or use them to handle real funds. The current wallet and API design need further security work before public deployment.
 
-Transactions require sufficient mined balance. Mine another block to include pending transactions. This prototype's API accepts private keys in request bodies, so use it only on localhost.
-
-## Important limitations
-
-This is a learning prototype, not a production blockchain:
-- No BFT/Proof-of-Stake finality, no slashing, no peer discovery protocol, no offline Bluetooth/Wi-Fi mesh.
-- Proof of work is intentionally easy for demos and can be changed with `DIFFICULTY`.
-- No production-grade mempool policy, fee market, reorg handling, wallet encryption, or rate limiting.
-- Chain validation is minimal and needs more adversarial tests before public use.
-- Demo rewards and coin units have no monetary value.
-- Do not port this directly to mainnet or expose its unauthenticated HTTP API to the internet.
+Contributions, issues, and technical feedback are welcome.
