@@ -1,0 +1,11 @@
+﻿node_modules/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+wallets/
+data-7070/
+data-7071/
+coverage/
