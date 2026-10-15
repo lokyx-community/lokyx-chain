@@ -53,3 +53,39 @@ test("node rejects a malformed transaction without changing chain height", async
   assert.equal(after.height, before.height);
   assert.equal(after.latestHash, before.latestHash);
 });
+
+test("node rejects a transaction with an invalid signature without changing pending count", async () => {
+  const beforeResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(beforeResponse.status, 200);
+  const before = await beforeResponse.json();
+
+  const response = await fetch(`${BASE_URL}/transactions/receive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tx: {
+        type: "transfer",
+        sender: "LKX0000000000000000000000000000000000000000",
+        recipient: "LKX1111111111111111111111111111111111111111",
+        amount: 1,
+        nonce: 1,
+        publicKey: "not-a-valid-public-key",
+        signature: "invalid-signature",
+      },
+    }),
+  });
+
+  assert.equal(response.status, 400);
+
+  const result = await response.json();
+  assert.equal(typeof result.error, "string");
+
+  const afterResponse = await fetch(`${BASE_URL}/status`);
+  assert.equal(afterResponse.status, 200);
+  const after = await afterResponse.json();
+
+  assert.equal(after.pendingTransactions, before.pendingTransactions);
+  assert.equal(after.height, before.height);
+  assert.equal(after.latestHash, before.latestHash);
+});
+
